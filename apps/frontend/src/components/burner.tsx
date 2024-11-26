@@ -5,7 +5,7 @@ import {
     result,
 } from "@permaweb/aoconnect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import COUNTER from "../constants/counter_process";
+import TOKENBURNER from "../constants/TokenBurner_process";
 
 export default function Counter() {
 	const queryClient = useQueryClient();
@@ -19,7 +19,7 @@ export default function Counter() {
 		queryKey: ["counter"],
 		queryFn: async () => {
 			const dryrunResult = await dryrun({
-				process: COUNTER,
+				process: TOKENBURNER,
 				tags: [
 					{
 						name: "Action",
@@ -40,7 +40,7 @@ export default function Counter() {
 		mutationKey: ["IncreaseCounter"],
 		mutationFn: async () => {
 			const messageId = await message({
-				process: COUNTER,
+				process: TOKENBURNER,
 				tags: [
 					{
 						name: "Action",
@@ -52,7 +52,7 @@ export default function Counter() {
 			});
 
 			const messageResult = await result({
-				process: COUNTER,
+				process: TOKENBURNER,
 				message: messageId,
 			});
 
@@ -71,7 +71,7 @@ export default function Counter() {
 		mutationKey: ["ResetCounter"],
 		mutationFn: async () => {
 			const messageId = await message({
-				process: COUNTER,
+				process: TOKENBURNER,
 				tags: [
 					{
 						name: "Action",
@@ -83,7 +83,7 @@ export default function Counter() {
 			});
 
 			const messageResult = await result({
-				process: COUNTER,
+				process: TOKENBURNER,
 				message: messageId,
 			});
 

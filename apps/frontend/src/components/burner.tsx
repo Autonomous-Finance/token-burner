@@ -6,10 +6,12 @@ import React, { useState } from "react"
 
 import TOKENBURNER from "../constants/TokenBurner_process"
 import { useTokenInfo } from "../hooks/use-token-info"
+import { burnTokens } from "@/api/token-burner-api"
+import { parseBigIntAsNumber, parseNumberAsBigInt } from "@/utils/format"
 
 export default function TokenBurner() {
   const queryClient = useQueryClient()
-  const [tokenId, setTokenId] = useState("")
+  const [tokenId, setTokenId] = useState("KorcWhBNgN9krJq7CbW6JmPD1hS53f9MQxL6MG-ZhKA")
   const [burnAmount, setBurnAmount] = useState("")
 
   const activeAddr = useActiveAddress()
@@ -78,51 +80,19 @@ export default function TokenBurner() {
         ],
       })
 
-      console.log("📜 LOG > queryFn: > dryrunResult:", dryrunResult)
-
       return dryrunResult.Messages[0].Tags.find((x) => x.name === "Quantity")?.value
     },
   })
 
-  // // Mutation to get burned balance for a token and recipient
-  // const getBurnedBalance = useMutation({
-  //     mutationKey: ["GetBurnedBalance"],
-  //     mutationFn: async ({ tokenId, recipient }) => {
-  //         const messageId = await message({
-  //             process: TOKENBURNER,
-  //             tags: [
-  //                 {
-  //                     name: "Action",
-  //                     value: "Burned-Balance",
-  //                 },
-  //                 {
-  //                     name: "Token",
-  //                     value: tokenId,
-  //                 },
-  //                 ...(recipient ? [{ name: "Recipient", value: recipient }] : []),
-  //             ],
-  //             data: "",
-  //             signer: createDataItemSigner(window.arweaveWallet),
-  //         });
-
-  //         const messageResult = await result({
-  //             process: TOKENBURNER,
-  //             message: messageId,
-  //         });
-  //         console.log("📜 LOG > mutationFn: > messageResult:", messageResult);
-
-  //         if (messageResult.Messages[0].Tags.Quantity) {
-  //             return messageResult.Messages[0].Tags.Quantity;
-  //         }
-
-  //         return "0";
-  //     },
-  // });
-
-  // Mutation to get burn events for a token
-  const getBurnEvents = useMutation({
-    mutationKey: ["BurnEvents", activeAddr],
-    mutationFn: async () => {
+  const {
+    data: burnEventsData,
+    error: burnEventsError,
+    isLoading: burnEventsLoading,
+    isFetching: burnEventsFetching,
+    refetch: refetchBurnEvents,
+  } = useQuery({
+    queryKey: ["BurnEvents", tokenId],
+    queryFn: async () => {
       const messageId = await message({
         process: TOKENBURNER,
         tags: [
@@ -153,68 +123,42 @@ export default function TokenBurner() {
   })
 
   // Mutation to burn tokens
-  const burnTokens = useMutation({
+  const burnTokensMutation = useMutation({
     mutationKey: ["BurnTokens", activeAddr],
     mutationFn: async () => {
-      if (!activeAddr) {
-        throw new Error("Wallet not connected")
+      if (!activeAddr || !burnAmount || !tokenId || !tokenInfo) {
+        throw new Error("Params invalid")
       }
 
-      if (!burnAmount || !tokenId) {
-        throw new Error("Token ID and amount are required")
-      }
-
-      // Transfer tokens to the burner process
-      const messageId = await message({
-        process: tokenId,
-        tags: [
-          {
-            name: "Action",
-            value: "Transfer",
-          },
-          {
-            name: "Recipient",
-            value: TOKENBURNER,
-          },
-          {
-            name: "Quantity",
-            value: burnAmount,
-          },
-        ],
-        data: "",
-        signer: createDataItemSigner(window.arweaveWallet),
+      const messageId = await burnTokens({
+        tokenProcess: tokenId,
+        burnProcess: TOKENBURNER,
+        amount: parseNumberAsBigInt(burnAmount, tokenInfo.denomination).toString(),
       })
 
-      // Wait for the burn confirmation
-      const messageResult = await result({
-        process: TOKENBURNER,
-        message: messageId,
-      })
-
-      return messageResult.Messages[0].Tags
+      return messageId
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["burnerInfo", tokenId])
+      // queryClient.invalidateQueries(["burnerInfo", tokenId])
       refetchBurnedBalance()
-      getBurnEvents.mutate()
+      refetchBurnEvents()
     },
   })
 
-  // Mutation to get LP tokens associated with the inputted token
-  const getLPTokens = useMutation({
-    mutationKey: ["BurnTokens", activeAddr],
-    mutationFn: async () => {
+  const {
+    data: lpTokensData,
+    error: lpTokensError,
+    isLoading: lpTokensLoading,
+    isFetching: lpTokensFetching,
+    refetch: refetchLPTokens,
+  } = useQuery({
+    queryKey: ["LPTokens", tokenId],
+    queryFn: async () => {
       const messageId = await message({
         process: TOKENBURNER,
         tags: [
-          {
-            name: "Action",
-            value: "Get-LP-Burn-History",
-          },
-          {
-            name: "Token",
-            value: tokenId,
-          },
+          { name: "Action", value: "Get-LP-Burn-History" },
+          { name: "Token", value: tokenId },
         ],
         data: "",
         signer: createDataItemSigner(window.arweaveWallet),
@@ -225,11 +169,7 @@ export default function TokenBurner() {
         message: messageId,
       })
 
-      if (messageResult.Messages[0].Data) {
-        return JSON.parse(messageResult.Messages[0].Data)
-      }
-
-      return []
+      return messageResult.Messages[0].Data ? JSON.parse(messageResult.Messages[0].Data) : []
     },
   })
 
@@ -254,18 +194,36 @@ export default function TokenBurner() {
           onChange={(e) => {
             setTokenId(e.target.value)
             // Invalidate and refetch data when tokenId changes
-            queryClient.invalidateQueries(["burnerInfo", tokenId])
-            getBurnEvents.reset()
-            getLPTokens.reset()
+            // queryClient.invalidateQueries(["burnerInfo", tokenId]) TODO
+            refetchBurnEvents()
+            refetchLPTokens()
           }}
           style={{ width: "300px", padding: "0.5rem" }}
         />
       </div>
 
+      {tokenId && activeAddr && (
+        <div>
+          <h3>Burn Tokens</h3>
+          <input
+            type="text"
+            placeholder="Amount to Burn"
+            value={burnAmount}
+            onChange={(e) => setBurnAmount(e.target.value)}
+          />
+          <button type="button" onClick={() => burnTokensMutation.mutate()}>
+            Burn Tokens
+          </button>
+          {burnTokensMutation.isPending && <p>Burning tokens...</p>}
+          {burnTokensMutation.isSuccess && <p>Tokens burned successfully!</p>}
+          {burnTokensMutation.isError && <p>Error: {burnTokensMutation.error.message}</p>}
+        </div>
+      )}
+
       {tokenId && (
         <>
           <div>
-            <h3>Burner Stats for Token {tokenInfo?.ticker}:</h3>
+            <h3>Overview</h3>
             {infoLoading || infoFetching ? (
               "Loading..."
             ) : burnerInfo ? (
@@ -279,12 +237,16 @@ export default function TokenBurner() {
                     : 0}
                 </p>
                 <p>
-                  Total Amount Burned:{" "}
+                  Total Burned:{" "}
                   {burnerInfo.perTokenStats &&
                   burnerInfo.perTokenStats[tokenId] &&
                   burnerInfo.perTokenStats[tokenId].totalBurned
-                    ? burnerInfo.perTokenStats[tokenId].totalBurned
-                    : "0"}
+                    ? parseBigIntAsNumber(
+                        burnerInfo.perTokenStats[tokenId].totalBurned,
+                        tokenInfo?.denomination,
+                      )
+                    : "0"}{" "}
+                  {tokenInfo?.ticker}
                 </p>
               </div>
             ) : (
@@ -294,30 +256,35 @@ export default function TokenBurner() {
 
           {activeAddr && (
             <div>
-              <h3>Your Burned Balance for Token {tokenInfo?.ticker}:</h3>
+              <h3>Your activity</h3>
               {burnedBalanceLoading || burnedBalanceFetching ? (
                 <p>Loading...</p>
               ) : burnedBalanceError ? (
                 <p>Error: {burnedBalanceError.message}</p>
               ) : (
-                <p>You have burned: {burnedBalance} tokens</p>
+                <p>
+                  You have burned: {parseBigIntAsNumber(burnedBalance, tokenInfo?.denomination)}{" "}
+                  {tokenInfo?.ticker}
+                </p>
               )}
             </div>
           )}
 
           <div>
-            <h3>Burn Events for Token {tokenInfo?.ticker}:</h3>
-            <button type="button" onClick={() => getBurnEvents.mutate()}>
-              Get Burn Events
-            </button>
-            {getBurnEvents.isLoading && <p>Loading...</p>}
-            {getBurnEvents.isSuccess && (
+            <h3>Latest burns</h3>
+            {burnEventsLoading || burnEventsFetching ? (
+              <p>Loading...</p>
+            ) : burnEventsError ? (
+              <p>Error: {burnEventsError.message}</p>
+            ) : burnEventsData ? (
               <div>
-                {getBurnEvents.data.length > 0 ? (
-                  <ul>
-                    {getBurnEvents.data.map((event, index) => (
+                {burnEventsData.length > 0 ? (
+                  <ul style={{ textAlign: "left" }}>
+                    {burnEventsData.map((event, index) => (
                       <li key={index}>
-                        User: {event.user}, Amount: {event.amount}
+                        User: {event.user} - Amount:{" "}
+                        {parseBigIntAsNumber(event.amount, tokenInfo?.denomination)}{" "}
+                        {tokenInfo?.ticker}
                       </li>
                     ))}
                   </ul>
@@ -325,38 +292,20 @@ export default function TokenBurner() {
                   <p>No burn events found.</p>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
-
-          {activeAddr && (
-            <div>
-              <h3>Burn Tokens</h3>
-              <input
-                type="text"
-                placeholder="Amount to Burn"
-                value={burnAmount}
-                onChange={(e) => setBurnAmount(e.target.value)}
-              />
-              <button type="button" onClick={() => burnTokens.mutate()}>
-                Burn Tokens
-              </button>
-              {burnTokens.isLoading && <p>Burning tokens...</p>}
-              {burnTokens.isSuccess && <p>Tokens burned successfully!</p>}
-              {burnTokens.isError && <p>Error: {burnTokens.error.message}</p>}
-            </div>
-          )}
 
           <div>
             <h3>LP Tokens Associated with Token {tokenInfo?.ticker}:</h3>
-            <button type="button" onClick={() => getLPTokens.mutate()}>
-              Get LP Tokens
-            </button>
-            {getLPTokens.isLoading && <p>Loading...</p>}
-            {getLPTokens.isSuccess && (
+            {lpTokensLoading || lpTokensFetching ? (
+              <p>Loading...</p>
+            ) : lpTokensError ? (
+              <p>Error: {lpTokensError.message}</p>
+            ) : lpTokensData ? (
               <div>
-                {getLPTokens.data.length > 0 ? (
+                {lpTokensData.length > 0 ? (
                   <ul>
-                    {getLPTokens.data.map((lpToken, index) => (
+                    {lpTokensData.map((lpToken, index) => (
                       <li key={index}>
                         <p>LP Token ID: {lpToken.LpToken}</p>
                         <p>Token-A: {lpToken.Details["Token-A"]}</p>
@@ -376,7 +325,7 @@ export default function TokenBurner() {
                   <p>No LP tokens found.</p>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         </>
       )}

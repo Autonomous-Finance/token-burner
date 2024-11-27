@@ -19,6 +19,7 @@
     "@permaweb/aoconnect": "^0.0.56",
     "@tanstack/react-query": "^5.51.9",
     "arweave-wallet-kit": "^1.0.4",
+    "dayjs": "^1.11.13",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zod": "^3.23.8",

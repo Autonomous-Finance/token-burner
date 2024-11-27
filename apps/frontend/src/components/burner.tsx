@@ -8,6 +8,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import TOKENBURNER from "../constants/TokenBurner_process";
 import { useActiveAddress } from "arweave-wallet-kit";
+import { useTokenInfo } from "../hooks/use-token-info";
 
 export default function TokenBurner() {
     const queryClient = useQueryClient();
@@ -15,6 +16,8 @@ export default function TokenBurner() {
     const [burnAmount, setBurnAmount] = useState("");
     
     const activeAddr = useActiveAddress()
+
+    const [tokenInfo] = useTokenInfo(tokenId);
 
 
     const {
@@ -69,6 +72,7 @@ export default function TokenBurner() {
                 process: TOKENBURNER,
                 message: messageId,
             });
+            console.log("📜 LOG > mutationFn: > messageResult:", messageResult);
 
             if (messageResult.Messages[0].Tags.Quantity) {
                 return messageResult.Messages[0].Tags.Quantity;
@@ -225,7 +229,7 @@ export default function TokenBurner() {
             {tokenId && (
                 <>
                     <div>
-                        <h3>Burner Stats for Token {tokenId}:</h3>
+                        <h3>Burner Stats for Token {tokenInfo?.ticker}:</h3>
                         {infoLoading || infoFetching ? (
                             "Loading..."
                         ) : burnerInfo ? (
@@ -254,7 +258,7 @@ export default function TokenBurner() {
 
                     {activeAddr && (
                         <div>
-                            <h3>Your Burned Balance for Token {tokenId}:</h3>
+                            <h3>Your Burned Balance for Token {tokenInfo?.ticker}:</h3>
                             <button
                                 type="button"
                                 onClick={() => getBurnedBalance.mutate()}
@@ -271,7 +275,7 @@ export default function TokenBurner() {
                     )}
 
                     <div>
-                        <h3>Burn Events for Token {tokenId}:</h3>
+                        <h3>Burn Events for Token {tokenInfo?.ticker}:</h3>
                         <button
                             type="button"
                             onClick={() => getBurnEvents.mutate()}
@@ -325,7 +329,7 @@ export default function TokenBurner() {
                     )}
 
                     <div>
-                        <h3>LP Tokens Associated with Token {tokenId}:</h3>
+                        <h3>LP Tokens Associated with Token {tokenInfo?.ticker}:</h3>
                         <button
                             type="button"
                             onClick={() => getLPTokens.mutate()}

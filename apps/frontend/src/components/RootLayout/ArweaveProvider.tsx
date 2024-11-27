@@ -1,0 +1,37 @@
+import { useColorScheme } from "@mui/material"
+import { ArweaveWalletKit } from "arweave-wallet-kit"
+import React from "react"
+
+import { UserSideEffects } from "./UserSideEffects"
+import { MainFontFF } from "./fonts"
+
+export function ArweaveProvider({ children }: { children: React.ReactNode }) {
+  const { mode = "dark" } = useColorScheme()
+
+  return (
+    <ArweaveWalletKit
+      theme={{
+        displayTheme: mode === "dark" ? "dark" : "light",
+        font: {
+          fontFamily: MainFontFF,
+        },
+        radius: "minimal",
+        accent: {
+          r: 76,
+          g: 175,
+          b: 81,
+        },
+      }}
+      config={{
+        appInfo: {
+          name: "Dexi",
+        },
+        permissions: ["ACCESS_ADDRESS", "SIGN_TRANSACTION"],
+        ensurePermissions: true,
+      }}
+    >
+      <UserSideEffects />
+      {children}
+    </ArweaveWalletKit>
+  )
+}

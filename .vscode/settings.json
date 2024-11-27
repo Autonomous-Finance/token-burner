@@ -1,0 +1,6 @@
+{
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "prettier.prettierPath": "./apps/frontend/node_modules/prettier",
+}

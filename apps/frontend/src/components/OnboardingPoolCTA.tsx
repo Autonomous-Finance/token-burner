@@ -100,12 +100,23 @@ export default function OnboardingPoolCTA() {
               <br />
               By subscribing, you'll unlock:
             </Typography>
-            <Paper sx={{ padding: 3, backgroundColor: theme.palette.background.default }}>
+            <Paper
+              sx={{
+                padding: 3,
+                backgroundColor: theme.palette.background.default,
+              }}
+            >
               <Stack direction="column" spacing={2}>
                 {[
-                  { icon: <Analytics />, text: "Detailed analytics and performance tracking" },
+                  {
+                    icon: <Analytics />,
+                    text: "Detailed analytics and performance tracking",
+                  },
                   { icon: <ShowChart />, text: "Advanced candlestick charts" },
-                  { icon: <BarChartSharp />, text: "In-depth liquidity information" },
+                  {
+                    icon: <BarChartSharp />,
+                    text: "In-depth liquidity information",
+                  },
                   { icon: <Lock />, text: "Liquidity lock details" },
                   { icon: <PriceChange />, text: "Real-time token prices" },
                   { icon: <History />, text: "Historical transaction data" },

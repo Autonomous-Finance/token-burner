@@ -1,18 +1,25 @@
-module.exports = {
-  root: true,
-  env: { browser: true, es2020: true },
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:react-hooks/recommended',
-  ],
-  ignorePatterns: ['dist', '.eslintrc.cjs'],
-  parser: '@typescript-eslint/parser',
-  plugins: ['react-refresh'],
+/** @type {import("eslint").Linter.Config} */
+const config = {
+  parser: "@typescript-eslint/parser",
+  plugins: ["@typescript-eslint", "prettier", "import", "unused-imports"],
+  extends: ["prettier"],
+  ignorePatterns: ["*datafeeds*", "*charting_library*", "*cache*", "dist"],
   rules: {
-    'react-refresh/only-export-components': [
-      'warn',
-      { allowConstantExport: true },
+    "prettier/prettier": ["warn"],
+    "unused-imports/no-unused-imports": "warn",
+    "@typescript-eslint/consistent-type-imports": ["off"],
+    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    "import/order": [
+      "warn",
+      {
+        groups: ["external", "internal"],
+        "newlines-between": "always-and-inside-groups",
+        alphabetize: {
+          order: "asc",
+        },
+      },
     ],
   },
 }
+
+module.exports = config

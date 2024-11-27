@@ -22,7 +22,11 @@ export function TokenAvatar(props: TokenAvatarProps) {
       <Avatar
         src={tokenInfo ? `https://arweave.net/${tokenInfo.logo}` : ""}
         alt={tokenInfo ? tokenInfo.name : tokenId}
-        sx={{ width: sizes[size], height: sizes[size], fontSize: sizes[size] * 0.75 }}
+        sx={{
+          width: sizes[size],
+          height: sizes[size],
+          fontSize: sizes[size] * 0.75,
+        }}
       />
     </>
   )

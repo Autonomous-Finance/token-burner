@@ -1,6 +1,7 @@
-import { ConnectButton } from "arweave-wallet-kit";
-import "./App.css";
-import TokenBurner from "./components/burner";
+import { ConnectButton } from "arweave-wallet-kit"
+
+import "./App.css"
+import TokenBurner from "./components/burner"
 
 function App() {
   return (
@@ -12,7 +13,7 @@ function App() {
         <TokenBurner />
       </div>
     </>
-  );
+  )
 }
 
-export default App;
+export default App

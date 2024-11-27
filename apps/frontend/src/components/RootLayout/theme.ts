@@ -30,15 +30,18 @@ export const theme = extendTheme({
   colorSchemes: {
     dark: {
       palette: {
+        text: {
+          primary: "rgb(180,180,180)",
+        },
         primary: {
           main: "rgb(250,250,250)",
         },
         secondary: {
-          main: "rgb(170,170,170)",
+          main: "rgb(50,50,50)",
         },
         // @ts-ignore
         accent: {
-          main: "rgba(76, 175, 81)",
+          main: "rgba(255,90,0)",
         },
         TableCell: {
           border: "rgba(255, 255, 255, 0.12)", // same as divider
@@ -90,6 +93,15 @@ export const theme = extendTheme({
   },
   typography: {
     fontFamily: MainFontFF,
+    caption: {
+      fontSize: "0.85rem",
+      fontWeight: 300,
+    },
+    subtitle1: {
+      fontSize: "1.25rem",
+      fontWeight: 900,
+      fontFamily: "system-ui, sans-serif",
+    },
   },
   components: {
     MuiButtonBase: {
@@ -145,7 +157,7 @@ export const theme = extendTheme({
     },
   },
   shape: {
-    borderRadius: 55,
+    borderRadius: 0,
   },
   breakpoints: {
     values: {

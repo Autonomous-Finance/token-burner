@@ -25,7 +25,6 @@ export default function RootLayoutUI({ children }: PropsWithChildren) {
           <Container maxWidth="md" sx={{ minHeight: "calc(100vh - 177px)", paddingY: 3 }}>
             {children}
           </Container>
-          {/* <Footer /> */}
         </ArweaveProvider>
       </CssVarsProvider>
     </>

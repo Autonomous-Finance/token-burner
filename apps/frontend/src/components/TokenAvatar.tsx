@@ -18,16 +18,15 @@ export function TokenAvatar(props: TokenAvatarProps) {
   const [tokenInfo] = useTokenInfo(tokenId)
 
   return (
-    <>
-      <Avatar
-        src={tokenInfo ? `https://arweave.net/${tokenInfo.logo}` : ""}
-        alt={tokenInfo ? tokenInfo.name : tokenId}
-        sx={{
-          width: sizes[size],
-          height: sizes[size],
-          fontSize: sizes[size] * 0.75,
-        }}
-      />
-    </>
+    <Avatar
+      src={tokenInfo ? `https://arweave.net/${tokenInfo.logo}` : ""}
+      alt={tokenInfo ? tokenInfo.name : tokenId}
+      sx={{
+        width: sizes[size],
+        height: sizes[size],
+        fontSize: sizes[size] * 0.75,
+        display: "inline-flex",
+      }}
+    />
   )
 }

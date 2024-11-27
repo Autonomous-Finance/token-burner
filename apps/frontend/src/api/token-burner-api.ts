@@ -78,6 +78,8 @@ type BurnHistoryEntry = {
 type LpToken = {
   LpToken: string
   Details: {
+    Ticker: string
+    Name: string
     TokenA: string
     TokenB: string
     Denomination: string

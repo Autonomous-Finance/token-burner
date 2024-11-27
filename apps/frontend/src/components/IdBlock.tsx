@@ -59,7 +59,16 @@ export function IdBlock(props: IdBlockProps) {
       }}
     >
       <Tooltip title={value}>
-        <span>{label}</span>
+        <Box
+          component="span"
+          sx={{
+            paddingY: "3px",
+            paddingX: "6px",
+            background: "var(--mui-palette-action-hover)",
+          }}
+        >
+          {label}
+        </Box>
       </Tooltip>
       {!hideCopyToClipboard && <CopyToClipboard value={copyValue} />}
     </Box>

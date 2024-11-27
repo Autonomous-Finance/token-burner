@@ -1,17 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ArweaveWalletKit } from "arweave-wallet-kit"
-import React from "react"
-import ReactDOM from "react-dom/client"
+import * as ReactDOM from "react-dom/client"
 
-import App from "./App.tsx"
-import "./index.css"
+import { HashRouter, Route, Routes } from "react-router-dom"
 
-// Create a React Query client
+import RootLayoutUI from "./components/RootLayout/RootLayoutUI"
+import TokenBurner from "./components/burner"
+// Create a client
 const queryClient = new QueryClient()
 
-// biome-ignore lint/style/noNonNullAssertion: <explanation>
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+  <QueryClientProvider client={queryClient}>
     <ArweaveWalletKit
       config={{
         permissions: ["SIGN_TRANSACTION", "ACCESS_ADDRESS"],
@@ -21,9 +20,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         displayTheme: "light",
       }}
     >
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
+      <HashRouter>
+        <RootLayoutUI>
+          <Routes>
+            <Route path="/" element={<TokenBurner />} />
+          </Routes>
+        </RootLayoutUI>
+      </HashRouter>
     </ArweaveWalletKit>
-  </React.StrictMode>,
+  </QueryClientProvider>,
 )

@@ -1,9 +1,9 @@
-import { Container, Stack, useScrollTrigger, Box, Link as MuiLink } from "@mui/material"
+import { Container, Stack, useScrollTrigger, Box } from "@mui/material"
 
 import { ConnectButton, useActiveAddress } from "arweave-wallet-kit"
 
 import { useMemo } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 
 import { MainFontFF } from "./fonts"
 
@@ -49,37 +49,6 @@ const Header = () => {
           </Box> */}
 
           {/* Menu links */}
-          <Stack
-            direction="row"
-            gap={3}
-            sx={{
-              "& > a": {
-                minWidth: 40,
-                textAlign: "center",
-                transition: "color 0.18s ease-in-out",
-              },
-              "& > a:hover": {
-                color: "var(--mui-palette-accent-main)",
-              },
-            }}
-          >
-            <MuiLink
-              component={Link}
-              underline="none"
-              color={page === "home" ? "text.primary" : "text.secondary"}
-              to="/"
-            >
-              Home
-            </MuiLink>
-            <MuiLink
-              component={Link}
-              underline="none"
-              color={page === "airdrop" ? "text.primary" : "text.secondary"}
-              to="/airdrop"
-            >
-              Airdrop
-            </MuiLink>
-          </Stack>
 
           {/* Right side buttons */}
 

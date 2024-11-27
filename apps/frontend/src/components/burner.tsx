@@ -1,9 +1,22 @@
+import { Search } from "@mui/icons-material"
+import {
+  Button,
+  Grid,
+  InputAdornment,
+  Paper,
+  Skeleton,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material"
 import { dryrun } from "@permaweb/aoconnect"
 import { useMutation, useQuery } from "@tanstack/react-query"
 
-import { useActiveAddress } from "arweave-wallet-kit"
+import { useActiveAddress, useConnection } from "arweave-wallet-kit"
 import React, { useState } from "react"
 
+import { IdBlock } from "./IdBlock"
+import { TokenAvatar } from "./TokenAvatar"
 import TOKENBURNER from "../constants/TokenBurner_process"
 import { useTokenInfo } from "../hooks/use-token-info"
 import {
@@ -13,15 +26,16 @@ import {
   getBurnStats as getBurnStats,
 } from "@/api/token-burner-api"
 import { flattenTags } from "@/utils/arweave"
-import { parseBigIntAsNumber, parseNumberAsBigInt } from "@/utils/format"
+import { truncateId } from "@/utils/data-utils"
+import { formatTicker, parseBigIntAsNumber, parseNumberAsBigInt } from "@/utils/format"
 
 export default function TokenBurner() {
-  const [tokenId, setTokenId] = useState("")
+  const [tokenId, setTokenId] = useState("KorcWhBNgN9krJq7CbW6JmPD1hS53f9MQxL6MG-ZhKA")
   const [burnAmount, setBurnAmount] = useState("")
 
   const activeAddr = useActiveAddress()
 
-  const [tokenInfo] = useTokenInfo(tokenId)
+  const [tokenInfo, tokenLoading] = useTokenInfo(tokenId)
 
   const {
     data: burnerInfo,
@@ -88,6 +102,7 @@ export default function TokenBurner() {
     queryFn: async () => {
       const result = await getBurnEvents(TOKENBURNER, tokenId)
       console.log("onBurnEvents", result)
+      if (result) return result.reverse().slice(0, 5)
       return result
     },
   })
@@ -109,7 +124,6 @@ export default function TokenBurner() {
       return messageId
     },
     onSuccess: () => {
-      // queryClient.invalidateQueries(["burnerInfo", tokenId])
       refetchBurnedBalance()
       refetchBurnEvents()
     },
@@ -130,166 +144,217 @@ export default function TokenBurner() {
     },
   })
 
+  const { connect } = useConnection()
+
   if (infoError) {
     return <div>Error: {infoError.message}</div>
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "1rem",
-        alignItems: "center",
-      }}
-    >
-      <div>
-        <input
+    <Typography alignItems="center" gap={6} component={Stack} variant="caption">
+      <>
+        <TextField
+          sx={{ width: 480 }}
+          size="small"
+          margin="dense"
+          label="Search"
+          placeholder="Token Address"
+          disabled={burnTokensMutation.isPending}
           type="text"
-          placeholder="Enter Token Address"
           value={tokenId}
-          onChange={(e) => {
-            setTokenId(e.target.value)
-            // Invalidate and refetch data when tokenId changes
-            // queryClient.invalidateQueries(["burnerInfo", tokenId]) TODO
-            refetchBurnEvents()
-            refetchLPTokens()
+          onChange={(e) => setTokenId(e.target.value)}
+          // error={!!errors.lockAmount}
+          // helperText={errors.lockAmount}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <Search />
+              </InputAdornment>
+            ),
           }}
-          style={{ width: "300px", padding: "0.5rem" }}
         />
-      </div>
-
-      {tokenId && activeAddr && (
-        <div>
-          <h3>Burn Tokens</h3>
-          <input
-            type="text"
-            placeholder="Amount to Burn"
-            value={burnAmount}
-            onChange={(e) => setBurnAmount(e.target.value)}
-          />
-          <button type="button" onClick={() => burnTokensMutation.mutate()}>
-            Burn Tokens
-          </button>
-          {burnTokensMutation.isPending && <p>Burning tokens...</p>}
-          {burnTokensMutation.isSuccess && <p>Tokens burned successfully!</p>}
-          {burnTokensMutation.isError && <p>Error: {burnTokensMutation.error.message}</p>}
-        </div>
-      )}
+      </>
 
       {tokenId && (
         <>
-          <div>
-            <h3>Overview</h3>
-            {infoLoading || infoFetching ? (
-              "Loading..."
-            ) : burnerInfo ? (
-              <div>
-                <p>
-                  Total Burn Events:{" "}
-                  {burnerInfo.perTokenStats &&
-                  burnerInfo.perTokenStats[tokenId] &&
-                  burnerInfo.perTokenStats[tokenId].numBurns
-                    ? burnerInfo.perTokenStats[tokenId].numBurns
-                    : 0}
-                </p>
-                <p>
-                  Total Burned:{" "}
-                  {burnerInfo.perTokenStats &&
-                  burnerInfo.perTokenStats[tokenId] &&
-                  burnerInfo.perTokenStats[tokenId].totalBurned
-                    ? parseBigIntAsNumber(
-                        burnerInfo.perTokenStats[tokenId].totalBurned,
-                        tokenInfo?.denomination,
-                      )
-                    : "0"}{" "}
-                  {tokenInfo?.ticker}
-                </p>
-              </div>
-            ) : (
-              "No data available"
-            )}
-          </div>
-
-          {activeAddr && (
-            <div>
-              <h3>Your activity</h3>
-              {burnedBalanceLoading || burnedBalanceFetching ? (
-                <p>Loading...</p>
-              ) : burnedBalanceError ? (
-                <p>Error: {burnedBalanceError.message}</p>
-              ) : (
-                <p>
-                  You have burned: {parseBigIntAsNumber(burnedBalance, tokenInfo?.denomination)}{" "}
-                  {tokenInfo?.ticker}
-                </p>
-              )}
-            </div>
+          {tokenInfo ? (
+            <Stack direction="row" gap={1}>
+              <TokenAvatar tokenId={tokenId} size="large" />
+              <Typography variant="subtitle1" color="primary">
+                {formatTicker(tokenInfo.ticker)}
+              </Typography>
+            </Stack>
+          ) : tokenLoading ? (
+            <Skeleton width={100} height={35} />
+          ) : (
+            "Token not found"
           )}
-
-          <div>
-            <h3>Latest burns</h3>
-            {burnEventsLoading || burnEventsFetching ? (
-              <p>Loading...</p>
-            ) : burnEventsError ? (
-              <p>Error: {burnEventsError.message}</p>
-            ) : burnEventsData ? (
-              <div>
-                {burnEventsData.length > 0 ? (
-                  <ul style={{ textAlign: "left" }}>
-                    {burnEventsData.map((event, index) => (
-                      <li key={index}>
-                        User: {event.user} - Amount:{" "}
-                        {parseBigIntAsNumber(event.amount, tokenInfo?.denomination)}{" "}
-                        {tokenInfo?.ticker}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No burn events found.</p>
-                )}
-              </div>
-            ) : null}
-          </div>
-
-          <div>
-            <h3>Liquidity Pools containing this token</h3>
-            {lpTokensLoading || lpTokensFetching ? (
-              <p>Loading...</p>
-            ) : lpTokensError ? (
-              <p>Error: {lpTokensError.message}</p>
-            ) : lpTokensData ? (
-              <div>
-                {lpTokensData.length > 0 ? (
-                  <ul>
-                    {lpTokensData.map((lpToken, index) => (
-                      <li key={index} style={{ textAlign: "left" }}>
-                        <p>LP Token ID: {lpToken.LpToken}</p>
-                        <p>Token-A: {lpToken.Details["TokenA"]}</p>
-                        <p>Token-B: {lpToken.Details["TokenB"]}</p>
-                        <p>Burn History:</p>
-                        <ul>
-                          {lpToken.BurnHistory.map((event, idx) => (
-                            <li key={idx}>
-                              User: {event.user} - Amount:
-                              {parseBigIntAsNumber(
-                                event.amount,
-                                Number(lpToken.Details.Denomination),
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No burned LP tokens found.</p>
-                )}
-              </div>
-            ) : null}
-          </div>
         </>
       )}
-    </div>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} lg={6}>
+          {tokenInfo && (
+            <Paper sx={{ padding: 2 }} component={Stack} gap={2}>
+              <div>
+                <Typography variant="subtitle1" color="primary">
+                  Overview
+                </Typography>
+                {infoLoading || infoFetching ? (
+                  <Skeleton width={100} height={35} />
+                ) : burnerInfo ? (
+                  <Stack>
+                    <div>
+                      Total Burn Events:{" "}
+                      {burnerInfo.perTokenStats &&
+                      burnerInfo.perTokenStats[tokenId] &&
+                      burnerInfo.perTokenStats[tokenId].numBurns
+                        ? burnerInfo.perTokenStats[tokenId].numBurns
+                        : 0}
+                    </div>
+                    <div>
+                      Total Burned:{" "}
+                      {burnerInfo.perTokenStats &&
+                      burnerInfo.perTokenStats[tokenId] &&
+                      burnerInfo.perTokenStats[tokenId].totalBurned
+                        ? parseBigIntAsNumber(
+                            burnerInfo.perTokenStats[tokenId].totalBurned,
+                            tokenInfo?.denomination,
+                          )
+                        : "0"}{" "}
+                      {formatTicker(tokenInfo?.ticker)}
+                    </div>
+                  </Stack>
+                ) : (
+                  "No data available"
+                )}
+              </div>
+
+              <div>
+                <Typography variant="subtitle1" color="primary">
+                  Latest burns
+                </Typography>
+                {burnEventsLoading || burnEventsFetching ? (
+                  <Skeleton width={100} height={35} />
+                ) : burnEventsError ? (
+                  <p>Error: {burnEventsError.message}</p>
+                ) : burnEventsData ? (
+                  <div>
+                    {burnEventsData.length > 0 ? (
+                      <Stack gap={0.5}>
+                        {burnEventsData.map((event, index) => (
+                          <Stack key={index} direction="row" gap={1} alignItems="center">
+                            🔥{parseBigIntAsNumber(event.amount, tokenInfo?.denomination)}{" "}
+                            {formatTicker(tokenInfo?.ticker)} by
+                            <IdBlock label={truncateId(event.user)} value={event.user} />
+                          </Stack>
+                        ))}
+                      </Stack>
+                    ) : (
+                      <p>No burn events found.</p>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+
+              <Stack>
+                <Typography variant="subtitle1" color="primary">
+                  Liquidity Pools containing this token
+                </Typography>
+                {lpTokensLoading || lpTokensFetching ? (
+                  <Skeleton width={100} height={35} />
+                ) : lpTokensError ? (
+                  <p>Error: {lpTokensError.message}</p>
+                ) : lpTokensData ? (
+                  <div>
+                    {lpTokensData.length > 0 ? (
+                      <Stack>
+                        {lpTokensData.map((data, index) => (
+                          <div key={index} style={{ textAlign: "left" }}>
+                            <Stack direction="row" gap={1} alignItems="center">
+                              <TokenAvatar tokenId={data.LpToken} />
+                              <span>{formatTicker(data.Details.Ticker)}</span>
+                              <IdBlock label={truncateId(data.LpToken)} value={data.LpToken} />
+                            </Stack>
+                          </div>
+                        ))}
+                      </Stack>
+                    ) : (
+                      <p>No burned LP tokens found.</p>
+                    )}
+                  </div>
+                ) : null}
+              </Stack>
+            </Paper>
+          )}
+        </Grid>
+
+        <Grid item xs={12} lg={6}>
+          {tokenInfo && (
+            <Paper sx={{ padding: 2, width: 480 }}>
+              <Typography variant="subtitle1" color="primary">
+                Burn Tokens
+              </Typography>
+              <Stack direction="row" gap={1} alignItems="center">
+                <TextField
+                  fullWidth
+                  size="small"
+                  margin="dense"
+                  label="Burn amount"
+                  disabled={burnTokensMutation.isPending}
+                  type="number"
+                  value={burnAmount}
+                  onChange={(e) => setBurnAmount(e.target.value)}
+                  // error={!!errors.lockAmount}
+                  // helperText={errors.lockAmount}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        {formatTicker(tokenInfo?.ticker)}
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <Button
+                  color={"accent" as any}
+                  variant="outlined"
+                  onClick={() => {
+                    if (activeAddr) {
+                      burnTokensMutation.mutate()
+                    } else {
+                      connect()
+                    }
+                  }}
+                  sx={{ width: 110, height: 40, marginBottom: "-4px" }}
+                >
+                  Burn 🔥
+                </Button>
+              </Stack>
+              {burnTokensMutation.isPending && <p>Burning tokens...</p>}
+              {burnTokensMutation.isSuccess && <p>Tokens burned successfully!</p>}
+              {burnTokensMutation.isError && <p>Error: {burnTokensMutation.error.message}</p>}
+
+              {activeAddr && (
+                <Stack mt={4}>
+                  <Typography variant="subtitle1" color="primary">
+                    Your activity
+                  </Typography>
+                  {burnedBalanceLoading || burnedBalanceFetching ? (
+                    <Skeleton width={100} height={35} />
+                  ) : burnedBalanceError ? (
+                    <p>Error: {burnedBalanceError.message}</p>
+                  ) : (
+                    <p>
+                      You have burned: {parseBigIntAsNumber(burnedBalance, tokenInfo?.denomination)}{" "}
+                      {formatTicker(tokenInfo?.ticker)}
+                    </p>
+                  )}
+                </Stack>
+              )}
+            </Paper>
+          )}
+        </Grid>
+      </Grid>
+    </Typography>
   )
 }

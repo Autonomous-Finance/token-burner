@@ -16,7 +16,7 @@ import { flattenTags } from "@/utils/arweave"
 import { parseBigIntAsNumber, parseNumberAsBigInt } from "@/utils/format"
 
 export default function TokenBurner() {
-  const [tokenId, setTokenId] = useState("KorcWhBNgN9krJq7CbW6JmPD1hS53f9MQxL6MG-ZhKA")
+  const [tokenId, setTokenId] = useState("")
   const [burnAmount, setBurnAmount] = useState("")
 
   const activeAddr = useActiveAddress()

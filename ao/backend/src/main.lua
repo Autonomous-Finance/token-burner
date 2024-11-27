@@ -39,7 +39,7 @@ Handlers.add("burnTokens",
             Target = tokenProcessID,
             Tags = {
                 Action = 'Transfer',
-                Recipient = '0',
+                Recipient = '0000000000000000000000000000000000000000000',
                 Quantity = quantity,
             },
         })

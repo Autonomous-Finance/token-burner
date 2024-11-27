@@ -1,6 +1,6 @@
 import { ConnectButton } from "arweave-wallet-kit";
 import "./App.css";
-import Counter from "./components/burner";
+import TokenBurner from "./components/burner";
 
 function App() {
   return (
@@ -9,7 +9,7 @@ function App() {
         <div>
           <ConnectButton profileModal={true} showBalance={true} />
         </div>
-        <Counter />
+        <TokenBurner />
       </div>
     </>
   );

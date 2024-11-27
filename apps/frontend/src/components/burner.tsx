@@ -1,16 +1,16 @@
-import { createDataItemSigner, dryrun, message, result } from "@permaweb/aoconnect"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { createDataItemSigner, dryrun } from "@permaweb/aoconnect"
+import { useMutation, useQuery } from "@tanstack/react-query"
 
 import { useActiveAddress } from "arweave-wallet-kit"
 import React, { useState } from "react"
 
 import TOKENBURNER from "../constants/TokenBurner_process"
 import { useTokenInfo } from "../hooks/use-token-info"
-import { burnTokens } from "@/api/token-burner-api"
+import { burnTokens, getBurnEvents } from "@/api/token-burner-api"
+import { flattenTags } from "@/utils/arweave"
 import { parseBigIntAsNumber, parseNumberAsBigInt } from "@/utils/format"
 
 export default function TokenBurner() {
-  const queryClient = useQueryClient()
   const [tokenId, setTokenId] = useState("KorcWhBNgN9krJq7CbW6JmPD1hS53f9MQxL6MG-ZhKA")
   const [burnAmount, setBurnAmount] = useState("")
 
@@ -80,7 +80,8 @@ export default function TokenBurner() {
         ],
       })
 
-      return dryrunResult.Messages[0].Tags.find((x) => x.name === "Quantity")?.value
+      const tags = flattenTags(dryrunResult.Messages[0].Tags)
+      return tags["Quantity"]
     },
   })
 
@@ -93,32 +94,9 @@ export default function TokenBurner() {
   } = useQuery({
     queryKey: ["BurnEvents", tokenId],
     queryFn: async () => {
-      const messageId = await message({
-        process: TOKENBURNER,
-        tags: [
-          {
-            name: "Action",
-            value: "Get-Burns",
-          },
-          {
-            name: "Token",
-            value: tokenId,
-          },
-        ],
-        data: "",
-        signer: createDataItemSigner(window.arweaveWallet),
-      })
-
-      const messageResult = await result({
-        process: TOKENBURNER,
-        message: messageId,
-      })
-
-      if (messageResult.Messages[0].Data) {
-        return JSON.parse(messageResult.Messages[0].Data)
-      }
-
-      return []
+      const result = await getBurnEvents(TOKENBURNER, tokenId)
+      console.log("onBurnEvents", result)
+      return result
     },
   })
 
@@ -154,7 +132,7 @@ export default function TokenBurner() {
   } = useQuery({
     queryKey: ["LPTokens", tokenId],
     queryFn: async () => {
-      const messageId = await message({
+      const messageResult = await dryrun({
         process: TOKENBURNER,
         tags: [
           { name: "Action", value: "Get-LP-Burn-History" },
@@ -162,11 +140,6 @@ export default function TokenBurner() {
         ],
         data: "",
         signer: createDataItemSigner(window.arweaveWallet),
-      })
-
-      const messageResult = await result({
-        process: TOKENBURNER,
-        message: messageId,
       })
 
       return messageResult.Messages[0].Data ? JSON.parse(messageResult.Messages[0].Data) : []

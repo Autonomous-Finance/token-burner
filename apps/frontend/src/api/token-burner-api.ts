@@ -1,134 +1,36 @@
 import { createDataItemSigner, message, result } from "@permaweb/aoconnect"
 
 import { dryrun } from "./ao-connection"
-import ENV from "@/env"
 
-type RootTags = {
-  "Agent-Owner": string
-  Status: string
-  "Agent-Factory": string
-  Dexi: string
+export type BurnEvent = {
+  user: string
+  amount: string
 }
 
-type RewardsModule = {
-  RewardsToken: string
-  TotalDistributedRewards: string
-  EpochTime: string
-  RewardsPerEpoch: string
-  AvailableRewards: string
-  StartTime: string
-  Epochs: string
-  MinPeriodForRewards: string
-}
-
-type LockModule = {
-  TotalLocked: string
-  LPToken: string
-}
-
-type LockerInfo = {
-  rootTags: RootTags
-  "Rewards-Module": RewardsModule
-  "Lock-Module": LockModule
-}
-
-export async function getInfo(): Promise<LockerInfo> {
-  const result = await dryrun({
-    process: ENV.VITE_AGENT_LOCKER_PROCESS,
-    tags: [{ name: "Action", value: "Info" }],
-  })
-
-  if (result.Messages.length === 0) throw new Error("No response from Locked-Tokens")
-
-  const data = result.Messages[0].Data
-
-  if (!data) throw new Error("Response malformed")
-
-  const tokenDetails: LockerInfo = JSON.parse(data)
-
-  return tokenDetails
-}
-
-export type TokenLocking = {
-  LockEnd: number
-  CanWithdraw: boolean
-  LockPeriod: number
-  Amount: string
-  Start: number
-}
-
-export type LockedTokensData = {
-  User: string
-  TokensLocked: TokenLocking[]
-  TotalLocked: string
-}
-
-export async function getUserLockedTokens(userAddress: string) {
+export async function getBurnEvents(burnProcess: string, tokenProcess: string) {
   const tags = [
-    { name: "Action", value: "Get-User-Locked-Tokens" },
-    { name: "User", value: userAddress as string },
+    { name: "Action", value: "Get-Burns" },
+    {
+      name: "Token",
+      value: tokenProcess,
+    },
   ]
 
   try {
     const result = await dryrun({
-      process: ENV.VITE_AGENT_LOCKER_PROCESS,
+      process: burnProcess,
       tags,
     })
 
-    if (result.Messages.length === 0) throw new Error("No response from Get-User-Locked-Tokens")
+    if (result.Messages.length === 0) throw new Error("No response from Get-Burns")
 
     const data = result.Messages[0].Data
 
     if (!data) throw new Error("Response malformed")
 
-    const tokenDetails = JSON.parse(data) as LockedTokensData
+    const parsed = JSON.parse(data) as BurnEvent[]
 
-    return tokenDetails || null
-  } catch (error) {
-    return null
-  }
-}
-
-export type RewardsData = {
-  EpochRewards: string
-  AvailableUserRewards: string
-  LastClaim: {
-    Amount: string
-    Timestamp: number
-  }
-  User: string
-  RewardsModule: {
-    EpochTime: number
-    EpochsPassed: string
-  }
-  UserShare: {
-    EligibleLockedTokens: string
-    EligibleSharePercentage: string
-  }
-  TotalClaimed: string
-}
-
-export async function getUserRewards(userAddress: string) {
-  const tags = [
-    { name: "Action", value: "Get-User-Rewards" },
-    { name: "User", value: userAddress as string },
-  ]
-
-  try {
-    const result = await dryrun({
-      process: ENV.VITE_AGENT_LOCKER_PROCESS,
-      tags,
-    })
-
-    if (result.Messages.length === 0) throw new Error("No response from Get-User-Rewards")
-
-    const data = result.Messages[0].Data
-
-    if (!data) throw new Error("Response malformed")
-
-    const tokenDetails = JSON.parse(data) as RewardsData
-
-    return tokenDetails || null
+    return parsed || null
   } catch (error) {
     return null
   }

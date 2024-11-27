@@ -1,4 +1,4 @@
-import { createDataItemSigner, dryrun } from "@permaweb/aoconnect"
+import { dryrun } from "@permaweb/aoconnect"
 import { useMutation, useQuery } from "@tanstack/react-query"
 
 import { useActiveAddress } from "arweave-wallet-kit"
@@ -6,7 +6,12 @@ import React, { useState } from "react"
 
 import TOKENBURNER from "../constants/TokenBurner_process"
 import { useTokenInfo } from "../hooks/use-token-info"
-import { burnTokens, getBurnEvents } from "@/api/token-burner-api"
+import {
+  burnTokens,
+  getBurnedLpTokens,
+  getBurnEvents,
+  getBurnStats as getBurnStats,
+} from "@/api/token-burner-api"
 import { flattenTags } from "@/utils/arweave"
 import { parseBigIntAsNumber, parseNumberAsBigInt } from "@/utils/format"
 
@@ -24,24 +29,11 @@ export default function TokenBurner() {
     isLoading: infoLoading,
     isFetching: infoFetching,
   } = useQuery({
-    enabled: !!tokenId, // Only run when tokenId is provided
-    queryKey: ["burnerInfo", tokenId],
+    queryKey: ["burnerInfo"],
     queryFn: async () => {
-      const dryrunResult = await dryrun({
-        process: TOKENBURNER,
-        tags: [
-          {
-            name: "Action",
-            value: "Info",
-          },
-        ],
-      })
-
-      if (dryrunResult.Messages[0].Data) {
-        return JSON.parse(dryrunResult.Messages[0].Data)
-      }
-
-      return undefined
+      const result = await getBurnStats(TOKENBURNER)
+      console.log("onBurnStats", result)
+      return result
     },
   })
 
@@ -132,17 +124,9 @@ export default function TokenBurner() {
   } = useQuery({
     queryKey: ["LPTokens", tokenId],
     queryFn: async () => {
-      const messageResult = await dryrun({
-        process: TOKENBURNER,
-        tags: [
-          { name: "Action", value: "Get-LP-Burn-History" },
-          { name: "Token", value: tokenId },
-        ],
-        data: "",
-        signer: createDataItemSigner(window.arweaveWallet),
-      })
-
-      return messageResult.Messages[0].Data ? JSON.parse(messageResult.Messages[0].Data) : []
+      const result = await getBurnedLpTokens(TOKENBURNER, tokenId)
+      console.log("onLpTokens", result)
+      return result
     },
   })
 
@@ -269,7 +253,7 @@ export default function TokenBurner() {
           </div>
 
           <div>
-            <h3>LP Tokens Associated with Token {tokenInfo?.ticker}:</h3>
+            <h3>Liquidity Pools containing this token</h3>
             {lpTokensLoading || lpTokensFetching ? (
               <p>Loading...</p>
             ) : lpTokensError ? (
@@ -279,15 +263,19 @@ export default function TokenBurner() {
                 {lpTokensData.length > 0 ? (
                   <ul>
                     {lpTokensData.map((lpToken, index) => (
-                      <li key={index}>
+                      <li key={index} style={{ textAlign: "left" }}>
                         <p>LP Token ID: {lpToken.LpToken}</p>
-                        <p>Token-A: {lpToken.Details["Token-A"]}</p>
-                        <p>Token-B: {lpToken.Details["Token-B"]}</p>
+                        <p>Token-A: {lpToken.Details["TokenA"]}</p>
+                        <p>Token-B: {lpToken.Details["TokenB"]}</p>
                         <p>Burn History:</p>
                         <ul>
                           {lpToken.BurnHistory.map((event, idx) => (
                             <li key={idx}>
-                              User: {event.user}, Amount: {event.amount}
+                              User: {event.user} - Amount:
+                              {parseBigIntAsNumber(
+                                event.amount,
+                                Number(lpToken.Details.Denomination),
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -295,7 +283,7 @@ export default function TokenBurner() {
                     ))}
                   </ul>
                 ) : (
-                  <p>No LP tokens found.</p>
+                  <p>No burned LP tokens found.</p>
                 )}
               </div>
             ) : null}

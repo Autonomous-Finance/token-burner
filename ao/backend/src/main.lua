@@ -21,7 +21,7 @@ local function isLPToken(tokenProcessID)
         },
     }).receive()
     if infoResponse and infoResponse.Tags then
-        if infoResponse.Tags['Token-A'] and infoResponse.Tags['Token-B'] then
+        if infoResponse.Tags['TokenA'] and infoResponse.Tags['TokenB'] then
             return true, infoResponse.Tags
         end
     end
@@ -128,7 +128,7 @@ Handlers.add("getLPBurnHistory",
 
         local lpTokens = {}
         for lpTokenID, lpInfo in pairs(KnownLPTokens) do
-            if lpInfo['Token-A'] == tokenProcessID or lpInfo['Token-B'] == tokenProcessID then
+            if lpInfo['TokenA'] == tokenProcessID or lpInfo['TokenB'] == tokenProcessID then
                 table.insert(lpTokens, {
                     LpToken = lpTokenID,
                     BurnHistory = LPBurnHistory[lpTokenID] or {},

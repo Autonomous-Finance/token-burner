@@ -15,6 +15,8 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { useActiveAddress, useConnection } from "arweave-wallet-kit"
 import React, { useState } from "react"
 
+import { useSearchParams } from "react-router-dom"
+
 import { IdBlock } from "./IdBlock"
 import { TokenAvatar } from "./TokenAvatar"
 import TOKENBURNER from "../constants/TokenBurner_process"
@@ -30,7 +32,9 @@ import { truncateId } from "@/utils/data-utils"
 import { formatTicker, parseBigIntAsNumber, parseNumberAsBigInt } from "@/utils/format"
 
 export default function TokenBurner() {
-  const [tokenId, setTokenId] = useState("KorcWhBNgN9krJq7CbW6JmPD1hS53f9MQxL6MG-ZhKA")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tokenId = searchParams.get("tokenId") || ""
+
   const [burnAmount, setBurnAmount] = useState("")
 
   const activeAddr = useActiveAddress()
@@ -162,7 +166,13 @@ export default function TokenBurner() {
           disabled={burnTokensMutation.isPending}
           type="text"
           value={tokenId}
-          onChange={(e) => setTokenId(e.target.value)}
+          onChange={(e) => {
+            const tokenId = e.target.value
+
+            if (!tokenId) searchParams.delete("tokenId")
+            else searchParams.set("tokenId", tokenId)
+            setSearchParams(searchParams, { replace: true })
+          }}
           // error={!!errors.lockAmount}
           // helperText={errors.lockAmount}
           InputProps={{

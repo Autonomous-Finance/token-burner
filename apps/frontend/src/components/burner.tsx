@@ -283,7 +283,12 @@ export default function TokenBurner() {
                           <div key={index} style={{ textAlign: "left" }}>
                             <Stack direction="row" gap={1} alignItems="center">
                               <TokenAvatar tokenId={data.LpToken} />
-                              <span>{formatTicker(data.Details.Ticker)}</span>
+                              <IdBlock
+                                label={formatTicker(data.Details.Ticker)}
+                                value={data.LpToken}
+                                href={`https://dexi.arweave.net/#/pool/${data.LpToken}`}
+                                hideCopyToClipboard
+                              />
                               <IdBlock label={truncateId(data.LpToken)} value={data.LpToken} />
                             </Stack>
                           </div>
@@ -325,6 +330,7 @@ export default function TokenBurner() {
                     ),
                   }}
                 />
+                {/* TODO max button */}
                 <Button
                   color={"accent" as any}
                   variant="outlined"

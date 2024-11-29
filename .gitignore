@@ -1,3 +1,10 @@
 node_modules
 .env
 build
+
+dist-errors.txt
+dist-id.txt
+dist-manifest.csv
+dist-manifest.json
+
+dist

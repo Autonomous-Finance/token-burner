@@ -329,7 +329,7 @@ export default function TokenBurner() {
 
         <Grid item xs={12} lg={6}>
           {tokenInfo && (
-            <Paper sx={{ padding: 2, width: 480 }}>
+            <Paper sx={{ padding: 2, width: 444 }}>
               <Typography variant="subtitle1" color="primary">
                 Burn Tokens
               </Typography>

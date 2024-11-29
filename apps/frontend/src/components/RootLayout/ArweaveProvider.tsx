@@ -24,7 +24,7 @@ export function ArweaveProvider({ children }: { children: React.ReactNode }) {
       }}
       config={{
         appInfo: {
-          name: "Dexi",
+          name: "Token Burner",
         },
         permissions: ["ACCESS_ADDRESS", "SIGN_TRANSACTION"],
         ensurePermissions: true,

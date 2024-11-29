@@ -182,3 +182,21 @@ Handlers.add("info",
         })
     end
 )
+
+Handlers.add("getTotalBurnedAmount",
+    Handlers.utils.hasMatchingTag("Action", "Get-Total-Burned-Amount"),
+    function(msg)
+        local tokenProcessID = msg.Tags.Token
+
+        local totalBurned = TotalBurnedBalancesPerToken[tokenProcessID] or '0'
+
+        ao.send({
+            Target = msg.From,
+            Tags = {
+                Action = 'Get-Total-Burned-Amount-Response',
+                Token = tokenProcessID,
+                TotalBurned = totalBurned,
+            },
+        })
+    end
+)

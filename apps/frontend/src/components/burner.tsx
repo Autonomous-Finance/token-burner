@@ -11,25 +11,31 @@ import {
 } from "@mui/material"
 import { dryrun } from "@permaweb/aoconnect"
 import { useMutation, useQuery } from "@tanstack/react-query"
-
 import { useActiveAddress, useConnection } from "arweave-wallet-kit"
-import React, { useState } from "react"
-
+import React, { useState, useMemo } from "react"
 import { useSearchParams } from "react-router-dom"
 
 import { IdBlock } from "./IdBlock"
 import { TokenAvatar } from "./TokenAvatar"
 import TOKENBURNER from "../constants/TokenBurner_process"
 import { useTokenInfo } from "../hooks/use-token-info"
+import { getBalance } from "@/api/token-api"
 import {
   burnTokens,
   getBurnedLpTokens,
   getBurnEvents,
   getBurnStats as getBurnStats,
 } from "@/api/token-burner-api"
+import { CustomSlider } from "@/components/CustomSlider"
+import { INPUT_DECIMALS } from "@/settings"
 import { flattenTags } from "@/utils/arweave"
 import { truncateId } from "@/utils/data-utils"
-import { formatTicker, parseBigIntAsNumber, parseNumberAsBigInt } from "@/utils/format"
+import {
+  formatNumberAuto,
+  formatTicker,
+  parseBigIntAsNumber,
+  parseNumberAsBigInt,
+} from "@/utils/format"
 
 export default function TokenBurner() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -111,6 +117,25 @@ export default function TokenBurner() {
     },
   })
 
+  const { data: tokenBalance, isLoading: balanceLoading } = useQuery({
+    queryKey: ["tokenBalance", activeAddr, tokenId],
+    enabled: !!activeAddr && !!tokenId,
+    queryFn: async () => {
+      if (!activeAddr || !tokenId) return "0"
+      const balance = await getBalance(tokenId, activeAddr)
+      return balance.toString()
+    },
+  })
+
+  const amountAsBalancePercentage = useMemo(() => {
+    if (!tokenBalance || !burnAmount) return 0
+
+    const valueNormalized = parseNumberAsBigInt(burnAmount, tokenInfo?.denomination)
+    const percentage = (valueNormalized * 100n) / BigInt(tokenBalance)
+
+    return parseInt(percentage.toString())
+  }, [tokenBalance, burnAmount, tokenInfo])
+
   // Mutation to burn tokens
   const burnTokensMutation = useMutation({
     mutationKey: ["BurnTokens", activeAddr],
@@ -173,8 +198,6 @@ export default function TokenBurner() {
             else searchParams.set("tokenId", tokenId)
             setSearchParams(searchParams, { replace: true })
           }}
-          // error={!!errors.lockAmount}
-          // helperText={errors.lockAmount}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
@@ -320,8 +343,6 @@ export default function TokenBurner() {
                   type="number"
                   value={burnAmount}
                   onChange={(e) => setBurnAmount(e.target.value)}
-                  // error={!!errors.lockAmount}
-                  // helperText={errors.lockAmount}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
@@ -330,7 +351,6 @@ export default function TokenBurner() {
                     ),
                   }}
                 />
-                {/* TODO max button */}
                 <Button
                   color={"accent" as any}
                   variant="outlined"
@@ -346,6 +366,56 @@ export default function TokenBurner() {
                   Burn 🔥
                 </Button>
               </Stack>
+              {activeAddr && (
+                <Stack paddingX={0.5}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    component={Stack}
+                    direction="row"
+                    gap={1}
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <span>Balance</span>
+                    <span>
+                      {balanceLoading ? (
+                        <Skeleton width={60} sx={{ display: "inline-block" }} />
+                      ) : (
+                        formatNumberAuto(parseBigIntAsNumber(tokenBalance, tokenInfo?.denomination))
+                      )}{" "}
+                      {formatTicker(tokenInfo?.ticker)}
+                    </span>
+                  </Typography>
+                  <CustomSlider
+                    sx={{
+                      marginX: 0,
+                    }}
+                    disabled={burnTokensMutation.isPending}
+                    value={amountAsBalancePercentage}
+                    valueLabelDisplay="auto"
+                    shiftStep={1}
+                    step={1}
+                    min={1}
+                    max={100}
+                    valueLabelFormat={(burnAmount) => `${burnAmount}%`}
+                    onChange={(_event, nextInput) => {
+                      if (!tokenBalance) return
+
+                      const newValue = (BigInt(nextInput as number) * BigInt(tokenBalance)) / 100n
+
+                      setBurnAmount(
+                        parseBigIntAsNumber(
+                          newValue,
+                          tokenInfo?.denomination,
+                          nextInput === 100 ? tokenInfo?.denomination : INPUT_DECIMALS,
+                        ),
+                      )
+                    }}
+                  />
+                </Stack>
+              )}
+
               {burnTokensMutation.isPending && <p>Burning tokens...</p>}
               {burnTokensMutation.isSuccess && <p>Tokens burned successfully!</p>}
               {burnTokensMutation.isError && <p>Error: {burnTokensMutation.error.message}</p>}

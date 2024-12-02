@@ -4,10 +4,10 @@ import React from "react"
 export function LoadingSkeletons() {
   return (
     <Stack>
-      <Skeleton height={40} />
-      <Skeleton height={40} />
-      <Skeleton height={40} />
-      <Skeleton height={40} />
+      <Skeleton width={160} sx={{ display: "inline-block" }} />
+      <Skeleton width={160} sx={{ display: "inline-block" }} />
+      <Skeleton width={160} sx={{ display: "inline-block" }} />
+      <Skeleton width={160} sx={{ display: "inline-block" }} />
     </Stack>
   )
 }

@@ -1,6 +1,12 @@
 import { createDataItemSigner, message, result } from "@permaweb/aoconnect"
 
+import { gql } from "urql"
+
 import { dryrun } from "./ao-connection"
+import { AO_MIN_INGESTED_AT, goldsky } from "./graphql-client"
+import TOKENBURNER from "@/constants/TokenBurner_process"
+import { AoMessage, TransactionsResponse } from "@/types"
+import { messageFields, parseAoMessage } from "@/utils/arweave-utils"
 
 export type BurnStats = {
   totalBurnEvents: number
@@ -145,4 +151,44 @@ export async function burnTokens(data: BurnTokensParams): Promise<string> {
   }
 
   return messageId
+}
+
+const AllBurnsQuery = gql`
+  query ($burnContractId: String!, $limit: Int!, $sortOrder: SortOrder!, $cursor: String) {
+    transactions(
+      sort: $sortOrder
+      first: $limit
+      after: $cursor
+      tags: [
+        { name: "Action", values: ["Burned"] }
+        { name: "From-Process", values: [$burnContractId] }
+      ]
+      ${AO_MIN_INGESTED_AT}
+    ) {
+      ...MessageFields
+    }
+  }
+
+  ${messageFields}
+`
+
+export async function getAllBurns(
+  limit = 1000,
+  cursor = "",
+  ascending = false,
+  sortField = "ingestedAt" satisfies keyof AoMessage,
+): Promise<AoMessage[]> {
+  const result = await goldsky
+    .query<TransactionsResponse>(AllBurnsQuery, {
+      burnContractId: TOKENBURNER,
+      limit,
+      sortOrder: ascending ? "INGESTED_AT_ASC" : "INGESTED_AT_DESC",
+      cursor,
+    })
+    .toPromise()
+  const { data } = result
+
+  const burns = data?.transactions.edges.map(parseAoMessage)
+
+  return burns || []
 }

@@ -16,12 +16,14 @@ import React, { useState, useMemo } from "react"
 import { useSearchParams } from "react-router-dom"
 
 import { IdBlock } from "./IdBlock"
+import { LoadingSkeletons } from "./LoadingSkeletons"
 import { TokenAvatar } from "./TokenAvatar"
 import TOKENBURNER from "../constants/TokenBurner_process"
 import { useTokenInfo } from "../hooks/use-token-info"
 import { getBalance } from "@/api/token-api"
 import {
   burnTokens,
+  getAllBurns,
   getBurnedLpTokens,
   getBurnEvents,
   getBurnStats as getBurnStats,
@@ -29,6 +31,7 @@ import {
 import { useUserTokens } from "@/api/user"
 import { CustomSlider } from "@/components/CustomSlider"
 import { INPUT_DECIMALS } from "@/settings"
+import { AoMessage } from "@/types"
 import { flattenTags } from "@/utils/arweave"
 import { truncateId } from "@/utils/data-utils"
 import {
@@ -179,6 +182,15 @@ export default function TokenBurner() {
   // arconnect tokens with balances
   const tokens = useUserTokens()
 
+  const { data: latestBurns, isLoading: latestBurnsLoading } = useQuery({
+    queryKey: ["latestBurns"],
+    queryFn: async () => {
+      const result = await getAllBurns(20)
+      console.log("onLatestBurns", result)
+      return result
+    },
+  })
+
   if (infoError) {
     return <div>Error: {infoError.message}</div>
   }
@@ -245,9 +257,9 @@ export default function TokenBurner() {
         </>
       )}
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} lg={6}>
-          {tokenInfo && (
+      {tokenInfo ? (
+        <Grid container spacing={3}>
+          <Grid item xs={12} lg={6}>
             <Paper sx={{ padding: 2 }} component={Stack} gap={2}>
               <div>
                 <Typography variant="subtitle1" color="primary">
@@ -297,7 +309,10 @@ export default function TokenBurner() {
                       <Stack gap={0.5}>
                         {burnEventsData.map((event, index) => (
                           <Stack key={index} direction="row" gap={1} alignItems="center">
-                            🔥{parseBigIntAsNumber(event.amount, tokenInfo?.denomination)}{" "}
+                            🔥
+                            {formatNumberAuto(
+                              parseBigIntAsNumber(event.amount, tokenInfo?.denomination),
+                            )}{" "}
                             {formatTicker(tokenInfo?.ticker)} by
                             <IdBlock label={truncateId(event.user)} value={event.user} />
                           </Stack>
@@ -344,11 +359,9 @@ export default function TokenBurner() {
                 ) : null}
               </Stack>
             </Paper>
-          )}
-        </Grid>
+          </Grid>
 
-        <Grid item xs={12} lg={6}>
-          {tokenInfo && (
+          <Grid item xs={12} lg={6}>
             <Paper sx={{ padding: 2, width: 444 }}>
               <Typography variant="subtitle1" color="primary">
                 Burn Tokens
@@ -458,9 +471,24 @@ export default function TokenBurner() {
                 </Stack>
               )}
             </Paper>
-          )}
+          </Grid>
         </Grid>
-      </Grid>
+      ) : (
+        <>
+          <Typography variant="subtitle1" color="primary">
+            Latest burns
+          </Typography>
+          {latestBurnsLoading || !latestBurns ? (
+            <LoadingSkeletons />
+          ) : (
+            <Stack gap={0.5}>
+              {latestBurns.map((msg, index) => (
+                <BurnRow key={msg.id} msg={msg} />
+              ))}
+            </Stack>
+          )}
+        </>
+      )}
     </Typography>
   )
 }
@@ -481,6 +509,23 @@ export function RenderedOption(props: { tokenId: string }) {
           {tokenId}
         </Typography>
       </Stack>
+    </Stack>
+  )
+}
+
+export function BurnRow(props: { msg: AoMessage }) {
+  const { msg } = props
+
+  const [tokenInfo] = useTokenInfo(msg.tags["Token"])
+
+  if (!tokenInfo) return null
+
+  return (
+    <Stack direction="row" gap={1} alignItems="center">
+      🔥
+      {formatNumberAuto(parseBigIntAsNumber(msg.tags["Quantity"], tokenInfo?.denomination))}{" "}
+      {formatTicker(tokenInfo?.ticker)} by
+      <IdBlock label={truncateId(msg.to)} value={msg.to} />
     </Stack>
   )
 }

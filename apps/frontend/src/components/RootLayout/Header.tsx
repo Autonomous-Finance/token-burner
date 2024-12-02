@@ -1,11 +1,11 @@
-import { Container, Stack, useScrollTrigger, Box } from "@mui/material"
+import { Container, Stack, useScrollTrigger, Button } from "@mui/material"
 
-import { ConnectButton, useActiveAddress } from "arweave-wallet-kit"
+import { useActiveAddress, useConnection } from "arweave-wallet-kit"
 
 import { useMemo } from "react"
 import { useLocation } from "react-router-dom"
 
-import { MainFontFF } from "./fonts"
+import { truncateId } from "@/utils/data-utils"
 
 const Header = () => {
   const elevated = useScrollTrigger({
@@ -21,6 +21,7 @@ const Header = () => {
     () => (location.pathname.includes("/airdrop") ? "airdrop" : "home"),
     [location],
   )
+  const { connect, disconnect } = useConnection()
 
   return (
     <>
@@ -54,47 +55,14 @@ const Header = () => {
 
           <Stack direction="row" gap={1} alignItems="stretch">
             {/* <ThemeMode /> */}
-            <Box
-              sx={{
-                "&.MuiBox-root > button > div": {
-                  height: "fit-content",
-                  padding: 0,
-                },
-                "&.MuiBox-root button": {
-                  height: "100%",
-                  borderRadius: 1,
-                  border: "1px solid var(--mui-palette-accent-main)",
-                  paddingX: 2.5,
-                  paddingY: 1,
-                  color: "var(--mui-palette-accent-main)",
-                  background: "rgba(var(--mui-palette-accent-mainChannel) / 0.05)",
-                },
-                "&.MuiBox-root button:active": {
-                  transform: "scale(0.98) !important",
-                },
-                "& button:hover": {
-                  transform: "none !important",
-                  boxShadow: "none !important",
-                },
-                "& button > *": {
-                  fontWeight: 500,
-                  fontFamily: MainFontFF,
-                  textTransform: "none",
-                  lineHeight: 1,
-                  fontSize: "0.8125rem",
-                  padding: 0,
-                },
-                "& button  svg": {
-                  marginY: -1,
-                },
-              }}
+            <Button
+              onClick={!activeAddress ? connect : disconnect}
+              variant="outlined"
+              color="accent"
+              sx={{ textTransform: "none" }}
             >
-              <ConnectButton
-                id="connect-wallet-button"
-                showBalance={false}
-                showProfilePicture={false}
-              />
-            </Box>
+              {activeAddress ? truncateId(activeAddress) : "Connect Wallet to Burn Tokens"}{" "}
+            </Button>
           </Stack>
         </Container>
       </header>

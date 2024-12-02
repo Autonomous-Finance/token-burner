@@ -41,6 +41,13 @@ export default function RootLayoutUI({ children }: PropsWithChildren) {
               <Typography variant="caption" gutterBottom>
                 where you can permanently remove tokens from circulation.
               </Typography>
+              <Typography variant="caption" gutterBottom sx={{ "& *": { display: "inline-flex" } }}>
+                Burn address:{" "}
+                <IdBlock
+                  label="0000000000000000000000000000000000000000000"
+                  value="0000000000000000000000000000000000000000000"
+                />
+              </Typography>
             </Stack>
 
             {children}

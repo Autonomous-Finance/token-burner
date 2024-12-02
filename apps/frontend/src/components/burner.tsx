@@ -12,7 +12,7 @@ import {
 import { dryrun } from "@permaweb/aoconnect"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useActiveAddress, useConnection } from "arweave-wallet-kit"
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
 
 import { IdBlock } from "./IdBlock"
@@ -40,6 +40,8 @@ import {
   parseBigIntAsNumber,
   parseNumberAsBigInt,
 } from "@/utils/format"
+
+const latestBurnsPageSize = 20
 
 export default function TokenBurner() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -182,14 +184,18 @@ export default function TokenBurner() {
   // arconnect tokens with balances
   const tokens = useUserTokens()
 
-  const { data: latestBurns, isLoading: latestBurnsLoading } = useQuery({
-    queryKey: ["latestBurns"],
-    queryFn: async () => {
-      const result = await getAllBurns(20)
-      console.log("onLatestBurns", result)
-      return result
-    },
-  })
+  const [cursor, setCursor] = useState<string | undefined>()
+  const [latestBurnsLoading, setLatestBurnsLoading] = useState(true)
+  const [latestBurns, setLatestBurns] = useState<AoMessage[]>([])
+  const [endReached, setEndReached] = useState(false)
+
+  useEffect(() => {
+    getAllBurns(latestBurnsPageSize).then((result) => {
+      setLatestBurns(result)
+      setLatestBurnsLoading(false)
+      setCursor(result[result.length - 1]?.cursor)
+    })
+  }, [])
 
   if (infoError) {
     return <div>Error: {infoError.message}</div>
@@ -478,13 +484,32 @@ export default function TokenBurner() {
           <Typography variant="subtitle1" color="primary">
             Latest burns
           </Typography>
-          {latestBurnsLoading || !latestBurns ? (
+          {latestBurnsLoading && latestBurns.length === 0 ? (
             <LoadingSkeletons />
           ) : (
-            <Stack gap={0.5}>
-              {latestBurns.map((msg, index) => (
-                <BurnRow key={msg.id} msg={msg} />
-              ))}
+            <Stack gap={1}>
+              <Stack gap={0.5}>
+                {latestBurns.map((msg, index) => (
+                  <BurnRow key={msg.id} msg={msg} />
+                ))}
+              </Stack>
+              {!endReached && (
+                <Button
+                  sx={{ textTransform: "none" }}
+                  disabled={latestBurnsLoading}
+                  onClick={() => {
+                    setLatestBurnsLoading(true)
+                    getAllBurns(latestBurnsPageSize, cursor).then((result) => {
+                      setLatestBurns([...latestBurns, ...result])
+                      setCursor(result[result.length - 1]?.cursor)
+                      setLatestBurnsLoading(false)
+                      if (result.length < latestBurnsPageSize) setEndReached(true)
+                    })
+                  }}
+                >
+                  {latestBurnsLoading ? "Loading..." : "Load more"}
+                </Button>
+              )}
             </Stack>
           )}
         </>

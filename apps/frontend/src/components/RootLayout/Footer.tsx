@@ -1,10 +1,7 @@
-import { GitHub, X } from "@mui/icons-material"
 import { Box, Button, Container, Link as MuiLink, Stack, Typography } from "@mui/material"
 import React from "react"
 
 import { AFLogo } from "./AFLogo"
-import { DiscordLogo } from "./DiscordLogo"
-import ENV from "@/env"
 
 export function Footer() {
   return (
@@ -14,7 +11,7 @@ export function Footer() {
           <Stack
             direction={{ xs: "column-reverse", sm: "row" }}
             gap={2}
-            justifyContent="space-between"
+            justifyContent="center"
             alignItems="center"
           >
             <Button href="https://autonomous.finance" target="_blank" variant="text">
@@ -30,39 +27,16 @@ export function Footer() {
                 autonomous.finance
               </Typography>
             </Button>
-            <Stack gap={3} direction="row" alignItems="center">
-              <Typography variant="caption" color="text.secondary">
-                v{ENV.VITE_APP_VER?.replace(/"/g, "")} · {ENV.VITE_GIT_HASH?.substring(0, 6)}{" "}
-                &middot; {ENV.VITE_ENV}
-              </Typography>
-              <MuiLink
-                target="_blank"
-                href="https://github.com/Autonomous-Finance"
-                underline="hover"
-                variant="body2"
-                sx={{ color: "rgba(158, 162, 170, 1)" }}
-              >
-                <GitHub />
-              </MuiLink>
-              <MuiLink
-                target="_blank"
-                href="https://discord.gg/AK6C2PPWDc"
-                underline="hover"
-                variant="body2"
-                sx={{ color: "rgba(158, 162, 170, 1)" }}
-              >
-                <DiscordLogo width={24} height={24} />
-              </MuiLink>
-              <MuiLink
-                target="_blank"
-                href="https://twitter.com/autonomous_af"
-                underline="hover"
-                variant="body2"
-                sx={{ color: "rgba(158, 162, 170, 1)" }}
-              >
-                <X />
-              </MuiLink>
-            </Stack>
+            •{" "}
+            <MuiLink
+              target="_blank"
+              href="https://docs.autonomous.finance"
+              underline="hover"
+              variant="body2"
+              sx={{ color: "var(--mui-palette-text-secondary)" }}
+            >
+              Documentation
+            </MuiLink>
           </Stack>
         </Stack>
       </Container>

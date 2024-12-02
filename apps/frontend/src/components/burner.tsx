@@ -1,5 +1,5 @@
-import { Search } from "@mui/icons-material"
 import {
+  Autocomplete,
   Button,
   Grid,
   InputAdornment,
@@ -26,6 +26,7 @@ import {
   getBurnEvents,
   getBurnStats as getBurnStats,
 } from "@/api/token-burner-api"
+import { useUserTokens } from "@/api/user"
 import { CustomSlider } from "@/components/CustomSlider"
 import { INPUT_DECIMALS } from "@/settings"
 import { flattenTags } from "@/utils/arweave"
@@ -175,38 +176,57 @@ export default function TokenBurner() {
 
   const { connect } = useConnection()
 
+  // arconnect tokens with balances
+  const tokens = useUserTokens()
+
   if (infoError) {
     return <div>Error: {infoError.message}</div>
   }
 
   return (
     <Typography alignItems="center" gap={6} component={Stack} variant="caption">
-      <>
-        <TextField
-          sx={{ width: 480 }}
-          size="small"
-          margin="dense"
-          label="Search"
-          placeholder="Token Address"
-          disabled={burnTokensMutation.isPending}
-          type="text"
-          value={tokenId}
-          onChange={(e) => {
-            const tokenId = e.target.value
+      <Autocomplete
+        freeSolo
+        sx={{ width: 480 }}
+        size="small"
+        options={tokens || []}
+        getOptionLabel={(option) => (typeof option === "string" ? option : option.id)}
+        renderOption={(props, option) => (
+          <li {...props} key={option.id}>
+            <RenderedOption tokenId={option.id} />
+          </li>
+        )}
+        filterOptions={(options, params) => {
+          const filtered = options.filter(
+            (option) =>
+              (option.id && option.id.toLowerCase().includes(params.inputValue.toLowerCase())) ||
+              (option.ticker &&
+                option.ticker.toLowerCase().includes(params.inputValue.toLowerCase())),
+          )
 
-            if (!tokenId) searchParams.delete("tokenId")
-            else searchParams.set("tokenId", tokenId)
-            setSearchParams(searchParams, { replace: true })
-          }}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </>
+          return filtered
+        }}
+        value={tokens?.find((token) => token.id === tokenId) || null}
+        onInputChange={(event, newInputValue) => {
+          const tokenId = newInputValue
+          if (tokenId.length !== 43 && tokenId.length !== 0) return
+          console.log("onTokenChange", tokenId)
+          if (!tokenId) searchParams.delete("tokenId")
+          else searchParams.set("tokenId", tokenId)
+          setSearchParams(searchParams, { replace: true })
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            size="small"
+            margin="dense"
+            label="Search"
+            placeholder="Token Address"
+            disabled={burnTokensMutation.isPending}
+            type="text"
+          />
+        )}
+      />
 
       {tokenId && (
         <>
@@ -442,5 +462,25 @@ export default function TokenBurner() {
         </Grid>
       </Grid>
     </Typography>
+  )
+}
+
+export function RenderedOption(props: { tokenId: string }) {
+  const { tokenId } = props
+
+  const [tokenInfo] = useTokenInfo(tokenId)
+
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" flexGrow={1}>
+      <TokenAvatar tokenId={tokenId} size="large" />
+      <Stack>
+        <Typography component="div" variant="inherit" fontWeight={500}>
+          {tokenInfo?.ticker}
+        </Typography>
+        <Typography component="span" variant="caption">
+          {tokenId}
+        </Typography>
+      </Stack>
+    </Stack>
   )
 }

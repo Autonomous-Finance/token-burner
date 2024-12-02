@@ -15,6 +15,7 @@ import { Experimental_CssVarsProvider as CssVarsProvider } from "@mui/material/s
 import { PropsWithChildren } from "react"
 
 import { ArweaveProvider } from "./ArweaveProvider"
+import { Footer } from "./Footer"
 import Header from "./Header"
 import { theme } from "./theme"
 import { IdBlock } from "../IdBlock"
@@ -241,6 +242,7 @@ export default function RootLayoutUI({ children }: PropsWithChildren) {
               </AccordionDetails>
             </Accordion>
           </Container>
+          <Footer />
         </ArweaveProvider>
       </CssVarsProvider>
     </>

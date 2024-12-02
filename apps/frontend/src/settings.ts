@@ -1,3 +1,4 @@
+import { TokenInfo } from "./api/token-api"
 import ENV from "./env"
 
 export const DEXI_UPDATE_TOKEN_FULL_PRICE = 49.95
@@ -102,3 +103,11 @@ export const INPUT_DECIMALS = 6
 export const PRICE_DECIMALS = 18
 
 export const REFRESH_INTERVAL = 15_000
+
+export const W_AR: TokenInfo = {
+  id: "xU9zFkq3X2ZQ6olwNVvr1vUWIjc3kXTWr7xKQD6dh10",
+  name: "Wrapped AR",
+  ticker: "wAR", // patched
+  denomination: 12,
+  logo: "L99jaxRKQKJt9CqoJtPaieGPEhJD3wNhR4iGqc8amXs",
+}

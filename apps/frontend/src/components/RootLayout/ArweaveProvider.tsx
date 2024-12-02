@@ -26,7 +26,7 @@ export function ArweaveProvider({ children }: { children: React.ReactNode }) {
         appInfo: {
           name: "Token Burner",
         },
-        permissions: ["ACCESS_ADDRESS", "SIGN_TRANSACTION"],
+        permissions: ["ACCESS_ADDRESS", "SIGN_TRANSACTION", "ACCESS_TOKENS"],
         ensurePermissions: true,
       }}
     >

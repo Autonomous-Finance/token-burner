@@ -4,6 +4,7 @@ import * as ReactDOM from "react-dom/client"
 
 import { HashRouter, Route, Routes } from "react-router-dom"
 
+import Disclaimer from "./components/Disclaimer"
 import RootLayoutUI from "./components/RootLayout/RootLayoutUI"
 import TokenBurner from "./components/burner"
 // Create a client
@@ -22,9 +23,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     >
       <HashRouter>
         <RootLayoutUI>
-          <Routes>
-            <Route path="/" element={<TokenBurner />} />
-          </Routes>
+          <Disclaimer defaultOpen={true}>
+            <Routes>
+              <Route path="/" element={<TokenBurner />} />
+            </Routes>
+          </Disclaimer>
         </RootLayoutUI>
       </HashRouter>
     </ArweaveWalletKit>

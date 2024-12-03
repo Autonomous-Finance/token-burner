@@ -10,7 +10,7 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "bun run lint --fix",
-    "predeploy": "rm -rf ./dist && bun run build",
+    "predeploy": "rm -rf ./dist && rm -rf ./dist-* && bun run build",
     "deploy": "permaweb-deploy --ant-process t-5E82imqxUpBakG6gImVDccTxPggiY5P51hRfmN-bc",
     "preview": "vite preview"
   },

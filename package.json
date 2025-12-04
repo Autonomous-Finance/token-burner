@@ -1,5 +1,8 @@
 {
   "name": "token-burner",
+  "version": "1.0.0",
+  "description": "Token burning service built on AO - Archived project originally developed by AF (Autonomous Finance)",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "backend:deploy": "cd ./ao/backend && ./scripts/deploy.sh",
